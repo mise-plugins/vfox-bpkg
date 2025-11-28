@@ -13,7 +13,18 @@ function PLUGIN:PostInstall(ctx)
     -- Create bin directory
     cmd.exec("mkdir -p '" .. path .. "/bin'")
 
-    -- List of bpkg scripts to install (main script first)
+    -- bpkg uses symlinks to lib/ directory, so we need to:
+    -- 1. Copy the lib directory
+    -- 2. Copy the main bpkg.sh script
+    -- 3. Copy the symlinks (they point to lib/)
+
+    -- Copy lib directory
+    cmd.exec("cp -r '" .. srcDir .. "/lib' '" .. path .. "/bin/'")
+
+    -- Copy main script
+    cmd.exec("cp -f '" .. srcDir .. "/bpkg.sh' '" .. path .. "/bin/'")
+
+    -- Copy all symlinks (they'll still point to lib/ which we copied)
     local scripts = {
         "bpkg",
         "bpkg-env",
@@ -33,19 +44,22 @@ function PLUGIN:PostInstall(ctx)
         "bpkg-realpath",
     }
 
-    -- Copy all bpkg scripts to bin directory and make executable
     for _, script in ipairs(scripts) do
         local src = srcDir .. "/" .. script
         local dst = path .. "/bin/" .. script
-        -- Copy and make executable in one command
-        cmd.exec("cp -f '" .. src .. "' '" .. dst .. "' && chmod +x '" .. dst .. "'")
+        -- Copy symlink as symlink (-P preserves symlinks)
+        cmd.exec("cp -P '" .. src .. "' '" .. dst .. "' 2>/dev/null || true")
     end
 
+    -- Make all scripts executable
+    cmd.exec("chmod +x '" .. path .. "/bin/bpkg.sh'")
+    cmd.exec("find '" .. path .. "/bin/lib' -name '*.sh' -exec chmod +x {} \\;")
+
     -- Verify main bpkg script was installed
-    local file = io.open(path .. "/bin/bpkg", "r")
+    local file = io.open(path .. "/bin/bpkg.sh", "r")
     if file then
         file:close()
     else
-        error("Failed to install bpkg - main script not found at " .. path .. "/bin/bpkg")
+        error("Failed to install bpkg - main script not found at " .. path .. "/bin/bpkg.sh")
     end
 end
