@@ -13,7 +13,7 @@ function PLUGIN:PostInstall(ctx)
     -- Create bin directory
     cmd.exec("mkdir -p '" .. path .. "/bin'")
 
-    -- List of bpkg scripts to install
+    -- List of bpkg scripts to install (main script first)
     local scripts = {
         "bpkg",
         "bpkg-env",
@@ -33,24 +33,19 @@ function PLUGIN:PostInstall(ctx)
         "bpkg-realpath",
     }
 
-    -- Copy all bpkg scripts to bin directory
+    -- Copy all bpkg scripts to bin directory and make executable
     for _, script in ipairs(scripts) do
         local src = srcDir .. "/" .. script
         local dst = path .. "/bin/" .. script
-        -- Use cp with -f to overwrite if exists
-        local cpResult = pcall(function()
-            cmd.exec("cp -f '" .. src .. "' '" .. dst .. "' 2>/dev/null || true")
-        end)
+        -- Copy and make executable in one command
+        cmd.exec("cp -f '" .. src .. "' '" .. dst .. "' && chmod +x '" .. dst .. "'")
     end
-
-    -- Make all scripts executable
-    cmd.exec("chmod +x '" .. path .. "/bin/'*")
 
     -- Verify main bpkg script was installed
     local file = io.open(path .. "/bin/bpkg", "r")
     if file then
         file:close()
     else
-        error("Failed to install bpkg - main script not found")
+        error("Failed to install bpkg - main script not found at " .. path .. "/bin/bpkg")
     end
 end
