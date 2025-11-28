@@ -1,0 +1,28 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mise
+        uses: jdx/mise-action@v2
+
+      - name: Install bpkg using vfox plugin from GitHub
+        run: |
+          mise install "vfox:mise-plugins/vfox-bpkg@1.1.3"
+
+      - name: Test bpkg
+        run: |
+          mise x "vfox:mise-plugins/vfox-bpkg@1.1.3" -- bpkg --version
+          mise x "vfox:mise-plugins/vfox-bpkg@1.1.3" -- bpkg --help
