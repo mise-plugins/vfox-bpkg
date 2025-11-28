@@ -7,8 +7,16 @@ function PLUGIN:PostInstall(ctx)
     local path = sdkInfo.path
     local version = sdkInfo.version
 
-    -- The tarball extracts to bpkg-{version}/
+    -- The tarball may extract to bpkg-{version}/ or directly to path
+    -- Check which case we have
     local srcDir = path .. "/bpkg-" .. version
+    local file = io.open(srcDir .. "/bpkg.sh", "r")
+    if file then
+        file:close()
+    else
+        -- Files are directly in path
+        srcDir = path
+    end
 
     -- Create bin directory
     cmd.exec("mkdir -p '" .. path .. "/bin'")
